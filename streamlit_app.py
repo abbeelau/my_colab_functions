@@ -158,11 +158,11 @@ if run_analysis:
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            current_price = monthly_data.iloc[-1]
+            current_price = float(monthly_data.iloc[-1])
             st.metric("Current Price", f"${current_price:,.2f}")
         
         with col2:
-            latest_projection = projections.iloc[-1]['projected_level']
+            latest_projection = float(projections.iloc[-1]['projected_level'])
             st.metric("Latest Projection", f"${latest_projection:,.2f}")
         
         with col3:
