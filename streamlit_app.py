@@ -289,12 +289,16 @@ if run_analysis:
             
             # Format the dataframe for display
             display_df = projections.copy()
+            
+            # Round numeric columns BEFORE converting dates to strings
+            display_df['starting_average'] = display_df['starting_average'].round(2)
+            display_df['projected_level'] = display_df['projected_level'].round(2)
+            
+            # Now convert dates to strings
             display_df['reference_date'] = display_df['reference_date'].dt.strftime('%Y-%m-%d')
             display_df['window_start'] = display_df['window_start'].dt.strftime('%Y-%m-%d')
             display_df['window_end'] = display_df['window_end'].dt.strftime('%Y-%m-%d')
             display_df['projected_date'] = display_df['projected_date'].dt.strftime('%Y-%m-%d')
-            display_df['starting_average'] = display_df['starting_average'].round(2)
-            display_df['projected_level'] = display_df['projected_level'].round(2)
             
             st.dataframe(display_df, use_container_width=True, height=400)
             
