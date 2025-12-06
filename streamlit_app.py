@@ -229,10 +229,11 @@ if run_analysis:
                 (monthly_data.index <= pd.to_datetime(chart_end))
             ]
             
-            # Filter projection data for the zoom range
+            # Filter projection data - show ALL projections that START in the zoom range
+            # This allows the red projection line to extend into the future
             proj_filtered = projections[
-                (projections['projected_date'] >= pd.to_datetime(chart_start)) & 
-                (projections['projected_date'] <= pd.to_datetime(chart_end))
+                (projections['reference_date'] >= pd.to_datetime(chart_start)) & 
+                (projections['reference_date'] <= pd.to_datetime(chart_end))
             ]
             
             # Plot 1: Historical and Projected Levels
