@@ -102,12 +102,23 @@ start_date = st.sidebar.date_input(
     max_value=pd.to_datetime("today")
 )
 
-plot_start_date = st.sidebar.date_input(
-    "Display chart from",
-    value=pd.to_datetime("2000-01-01"),
-    min_value=pd.to_datetime("1970-01-01"),
-    max_value=pd.to_datetime("today")
-)
+col_start, col_end = st.sidebar.columns(2)
+
+with col_start:
+    plot_start_date = st.date_input(
+        "Chart start date",
+        value=pd.to_datetime("2000-01-01"),
+        min_value=pd.to_datetime("1970-01-01"),
+        max_value=pd.to_datetime("today")
+    )
+
+with col_end:
+    plot_end_date = st.date_input(
+        "Chart end date",
+        value=pd.to_datetime("today"),
+        min_value=pd.to_datetime("1970-01-01"),
+        max_value=pd.to_datetime("2050-12-31")
+    )
 
 # Run button
 st.sidebar.markdown("---")
@@ -121,6 +132,7 @@ st.sidebar.info("""
 - Higher expected return = steeper projection line
 - Adjusted prices recommended for stocks
 - Centered average needs future data, so projections won't reach current date
+- Use zoom controls in Charts tab to focus on specific time periods
 """)
 
 # Main content area
@@ -179,18 +191,58 @@ if run_analysis:
         tab1, tab2, tab3 = st.tabs(["📊 Charts", "📋 Data Table", "ℹ️ Explanation"])
         
         with tab1:
+            st.subheader("📊 Interactive Charts")
+            
+            # Add zoom/date range controls
+            col_zoom1, col_zoom2, col_zoom3 = st.columns([2, 2, 1])
+            
+            with col_zoom1:
+                chart_start = st.date_input(
+                    "Zoom: Start Date",
+                    value=plot_start_date,
+                    min_value=pd.to_datetime(start_date),
+                    max_value=pd.to_datetime("2050-12-31"),
+                    key="chart_start"
+                )
+            
+            with col_zoom2:
+                chart_end = st.date_input(
+                    "Zoom: End Date", 
+                    value=plot_end_date,
+                    min_value=pd.to_datetime(start_date),
+                    max_value=pd.to_datetime("2050-12-31"),
+                    key="chart_end"
+                )
+            
+            with col_zoom3:
+                st.write("")  # Spacer
+                st.write("")  # Spacer
+                if st.button("🔄 Reset Zoom"):
+                    st.rerun()
+            
             # Create the plot
             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), height_ratios=[2, 1])
             
-            # Filter historical data for plotting
-            hist_data = monthly_data[monthly_data.index >= pd.to_datetime(plot_start_date)]
+            # Filter historical data for plotting based on zoom range
+            hist_data = monthly_data[
+                (monthly_data.index >= pd.to_datetime(chart_start)) & 
+                (monthly_data.index <= pd.to_datetime(chart_end))
+            ]
+            
+            # Filter projection data for the zoom range
+            proj_filtered = projections[
+                (projections['projected_date'] >= pd.to_datetime(chart_start)) & 
+                (projections['projected_date'] <= pd.to_datetime(chart_end))
+            ]
             
             # Plot 1: Historical and Projected Levels
             ax1.plot(hist_data.index, hist_data.values, 
                     label='Historical Monthly Average', color='#1f77b4', linewidth=2.5)
-            ax1.plot(projections['projected_date'], projections['projected_level'], 
-                    label=f'Projected Level ({projection_years}Y @ {expected_return_pct}%)', 
-                    color='#d62728', linewidth=2.5, linestyle='--', marker='o', markersize=4)
+            
+            if len(proj_filtered) > 0:
+                ax1.plot(proj_filtered['projected_date'], proj_filtered['projected_level'], 
+                        label=f'Projected Level ({projection_years}Y @ {expected_return_pct}%)', 
+                        color='#d62728', linewidth=2.5, linestyle='--', marker='o', markersize=4)
             
             ax1.set_xlabel('Date', fontsize=12, fontweight='bold')
             ax1.set_ylabel('Price Level', fontsize=12, fontweight='bold')
@@ -203,9 +255,15 @@ if run_analysis:
             ax1.tick_params(axis='both', labelsize=10)
             
             # Plot 2: Starting Average Levels
-            ax2.plot(projections['reference_date'], projections['starting_average'],
-                    label=f'Centered {lookback_months}-Month Average (Starting Point)', 
-                    color='#2ca02c', linewidth=2.5, marker='s', markersize=4)
+            ref_filtered = projections[
+                (projections['reference_date'] >= pd.to_datetime(chart_start)) & 
+                (projections['reference_date'] <= pd.to_datetime(chart_end))
+            ]
+            
+            if len(ref_filtered) > 0:
+                ax2.plot(ref_filtered['reference_date'], ref_filtered['starting_average'],
+                        label=f'Centered {lookback_months}-Month Average (Starting Point)', 
+                        color='#2ca02c', linewidth=2.5, marker='s', markersize=4)
             
             ax2.set_xlabel('Reference Date', fontsize=12, fontweight='bold')
             ax2.set_ylabel('Average Level', fontsize=12, fontweight='bold')
