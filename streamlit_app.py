@@ -196,28 +196,38 @@ if run_analysis:
             # Add zoom/date range controls
             col_zoom1, col_zoom2, col_zoom3 = st.columns([2, 2, 1])
             
+            # Initialize session state for zoom dates if not exists
+            if 'zoom_start' not in st.session_state:
+                st.session_state.zoom_start = plot_start_date
+            if 'zoom_end' not in st.session_state:
+                st.session_state.zoom_end = plot_end_date
+            
             with col_zoom1:
                 chart_start = st.date_input(
                     "Zoom: Start Date",
-                    value=plot_start_date,
+                    value=st.session_state.zoom_start,
                     min_value=pd.to_datetime(start_date),
                     max_value=pd.to_datetime("2050-12-31"),
-                    key="chart_start"
+                    key="chart_start_input"
                 )
+                st.session_state.zoom_start = chart_start
             
             with col_zoom2:
                 chart_end = st.date_input(
                     "Zoom: End Date", 
-                    value=plot_end_date,
+                    value=st.session_state.zoom_end,
                     min_value=pd.to_datetime(start_date),
                     max_value=pd.to_datetime("2050-12-31"),
-                    key="chart_end"
+                    key="chart_end_input"
                 )
+                st.session_state.zoom_end = chart_end
             
             with col_zoom3:
                 st.write("")  # Spacer
                 st.write("")  # Spacer
                 if st.button("🔄 Reset Zoom"):
+                    st.session_state.zoom_start = plot_start_date
+                    st.session_state.zoom_end = plot_end_date
                     st.rerun()
             
             # Create the plot
