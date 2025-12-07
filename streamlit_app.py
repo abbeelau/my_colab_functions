@@ -158,6 +158,14 @@ if run_analysis:
             if projections is None or len(projections) == 0:
                 st.error("❌ Not enough data to generate projections. Try adjusting the date range or lookback period.")
                 st.stop()
+            
+            # Store numeric statistics IMMEDIATELY after creation
+            starting_avg_min = float(projections['starting_average'].min())
+            starting_avg_max = float(projections['starting_average'].max())
+            starting_avg_mean = float(projections['starting_average'].mean())
+            projected_lvl_min = float(projections['projected_level'].min())
+            projected_lvl_max = float(projections['projected_level'].max())
+            projected_lvl_mean = float(projections['projected_level'].mean())
         
         # Calculate deviation (actual vs projected)
         # For each historical date, find if there's a corresponding projection
@@ -375,14 +383,6 @@ if run_analysis:
         
         with tab3:
             st.subheader("📋 Projection Data")
-            
-            # Store numeric stats BEFORE formatting
-            starting_avg_min = float(projections['starting_average'].min())
-            starting_avg_max = float(projections['starting_average'].max())
-            starting_avg_mean = float(projections['starting_average'].mean())
-            projected_lvl_min = float(projections['projected_level'].min())
-            projected_lvl_max = float(projections['projected_level'].max())
-            projected_lvl_mean = float(projections['projected_level'].mean())
             
             # Format the dataframe for display
             display_df = projections.copy()
