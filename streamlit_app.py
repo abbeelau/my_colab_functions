@@ -376,6 +376,14 @@ if run_analysis:
         with tab3:
             st.subheader("📋 Projection Data")
             
+            # Store numeric stats BEFORE formatting
+            starting_avg_min = float(projections['starting_average'].min())
+            starting_avg_max = float(projections['starting_average'].max())
+            starting_avg_mean = float(projections['starting_average'].mean())
+            projected_lvl_min = float(projections['projected_level'].min())
+            projected_lvl_max = float(projections['projected_level'].max())
+            projected_lvl_mean = float(projections['projected_level'].mean())
+            
             # Format the dataframe for display
             display_df = projections.copy()
             
@@ -418,18 +426,18 @@ if run_analysis:
             st.subheader("📊 Summary Statistics")
             col1, col2 = st.columns(2)
             
-            # Use original projections data (not display_df which has strings)
+            # Use pre-calculated numeric values
             with col1:
                 st.write("**Starting Average (Baseline)**")
-                st.write(f"- Minimum: ${float(projections['starting_average'].min()):,.2f}")
-                st.write(f"- Maximum: ${float(projections['starting_average'].max()):,.2f}")
-                st.write(f"- Mean: ${float(projections['starting_average'].mean()):,.2f}")
+                st.write(f"- Minimum: ${starting_avg_min:,.2f}")
+                st.write(f"- Maximum: ${starting_avg_max:,.2f}")
+                st.write(f"- Mean: ${starting_avg_mean:,.2f}")
             
             with col2:
                 st.write("**Projected Level**")
-                st.write(f"- Minimum: ${float(projections['projected_level'].min()):,.2f}")
-                st.write(f"- Maximum: ${float(projections['projected_level'].max()):,.2f}")
-                st.write(f"- Mean: ${float(projections['projected_level'].mean()):,.2f}")
+                st.write(f"- Minimum: ${projected_lvl_min:,.2f}")
+                st.write(f"- Maximum: ${projected_lvl_max:,.2f}")
+                st.write(f"- Mean: ${projected_lvl_mean:,.2f}")
         
         with tab4:
             st.subheader("ℹ️ How This Analysis Works")
