@@ -158,14 +158,6 @@ if run_analysis:
             if projections is None or len(projections) == 0:
                 st.error("❌ Not enough data to generate projections. Try adjusting the date range or lookback period.")
                 st.stop()
-            
-            # Store numeric statistics IMMEDIATELY after creation
-            starting_avg_min = float(projections['starting_average'].min())
-            starting_avg_max = float(projections['starting_average'].max())
-            starting_avg_mean = float(projections['starting_average'].mean())
-            projected_lvl_min = float(projections['projected_level'].min())
-            projected_lvl_max = float(projections['projected_level'].max())
-            projected_lvl_mean = float(projections['projected_level'].mean())
         
         # Calculate deviation (actual vs projected)
         # For each historical date, find if there's a corresponding projection
@@ -420,24 +412,6 @@ if run_analysis:
                     file_name=f"{selected_ticker}_deviation.csv",
                     mime="text/csv"
                 )
-            
-            # Summary statistics
-            st.markdown("---")
-            st.subheader("📊 Summary Statistics")
-            col1, col2 = st.columns(2)
-            
-            # Use pre-calculated numeric values
-            with col1:
-                st.write("**Starting Average (Baseline)**")
-                st.write(f"- Minimum: ${starting_avg_min:,.2f}")
-                st.write(f"- Maximum: ${starting_avg_max:,.2f}")
-                st.write(f"- Mean: ${starting_avg_mean:,.2f}")
-            
-            with col2:
-                st.write("**Projected Level**")
-                st.write(f"- Minimum: ${projected_lvl_min:,.2f}")
-                st.write(f"- Maximum: ${projected_lvl_max:,.2f}")
-                st.write(f"- Mean: ${projected_lvl_mean:,.2f}")
         
         with tab4:
             st.subheader("ℹ️ How This Analysis Works")
