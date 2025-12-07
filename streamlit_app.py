@@ -418,17 +418,18 @@ if run_analysis:
             st.subheader("📊 Summary Statistics")
             col1, col2 = st.columns(2)
             
+            # Use original projections data (not display_df which has strings)
             with col1:
                 st.write("**Starting Average (Baseline)**")
-                st.write(f"- Minimum: ${projections['starting_average'].min():,.2f}")
-                st.write(f"- Maximum: ${projections['starting_average'].max():,.2f}")
-                st.write(f"- Mean: ${projections['starting_average'].mean():,.2f}")
+                st.write(f"- Minimum: ${float(projections['starting_average'].min()):,.2f}")
+                st.write(f"- Maximum: ${float(projections['starting_average'].max()):,.2f}")
+                st.write(f"- Mean: ${float(projections['starting_average'].mean()):,.2f}")
             
             with col2:
                 st.write("**Projected Level**")
-                st.write(f"- Minimum: ${projections['projected_level'].min():,.2f}")
-                st.write(f"- Maximum: ${projections['projected_level'].max():,.2f}")
-                st.write(f"- Mean: ${projections['projected_level'].mean():,.2f}")
+                st.write(f"- Minimum: ${float(projections['projected_level'].min()):,.2f}")
+                st.write(f"- Maximum: ${float(projections['projected_level'].max()):,.2f}")
+                st.write(f"- Mean: ${float(projections['projected_level'].mean()):,.2f}")
         
         with tab4:
             st.subheader("ℹ️ How This Analysis Works")
