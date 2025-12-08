@@ -186,7 +186,8 @@ if run_analysis:
         # Display success message
         st.success(f"✅ Analysis complete for **{selected_ticker}**!")
         
-        # Key metrics
+        # Key metrics - First row
+        st.markdown("### 📊 Current Metrics")
         col1, col2, col3, col4, col5, col6 = st.columns(6)
         
         current_price = float(monthly_data.iloc[-1])
@@ -237,6 +238,60 @@ if run_analysis:
             else:
                 st.metric("Current Deviation", "N/A",
                          help="Not enough historical projections to calculate")
+        
+        # Second row - Projected returns at different timeframes
+        st.markdown("### 🎯 Projected Returns")
+        col1, col2, col3, col4 = st.columns(4)
+        
+        # Calculate 12-month projection
+        date_12m = current_date + relativedelta(months=12)
+        proj_12m = projections[projections['projected_date'] >= date_12m]
+        if len(proj_12m) > 0:
+            proj_12m_price = float(proj_12m.iloc[0]['projected_level'])
+            return_12m = ((proj_12m_price - current_price) / current_price) * 100
+        else:
+            proj_12m_price = None
+            return_12m = None
+        
+        # Calculate 24-month projection
+        date_24m = current_date + relativedelta(months=24)
+        proj_24m = projections[projections['projected_date'] >= date_24m]
+        if len(proj_24m) > 0:
+            proj_24m_price = float(proj_24m.iloc[0]['projected_level'])
+            return_24m = ((proj_24m_price - current_price) / current_price) * 100
+        else:
+            proj_24m_price = None
+            return_24m = None
+        
+        with col1:
+            if return_12m is not None:
+                st.metric("12-Month Target", f"${proj_12m_price:,.2f}",
+                         delta=f"{return_12m:+.1f}%",
+                         help=f"Projected price in 12 months: {date_12m.strftime('%Y-%m-%d')}")
+            else:
+                st.metric("12-Month Target", "N/A", help="Not enough projection data")
+        
+        with col2:
+            if return_12m is not None:
+                st.metric("12-Month Return", f"{return_12m:+.1f}%",
+                         delta=f"{return_12m:+.1f}%" if return_12m > 0 else None)
+            else:
+                st.metric("12-Month Return", "N/A")
+        
+        with col3:
+            if return_24m is not None:
+                st.metric("24-Month Target", f"${proj_24m_price:,.2f}",
+                         delta=f"{return_24m:+.1f}%",
+                         help=f"Projected price in 24 months: {date_24m.strftime('%Y-%m-%d')}")
+            else:
+                st.metric("24-Month Target", "N/A", help="Not enough projection data")
+        
+        with col4:
+            if return_24m is not None:
+                st.metric("24-Month Return", f"{return_24m:+.1f}%",
+                         delta=f"{return_24m:+.1f}%" if return_24m > 0 else None)
+            else:
+                st.metric("24-Month Return", "N/A")
         
         st.markdown("---")
         
@@ -423,10 +478,20 @@ if run_analysis:
                 mime="text/csv"
             )
             
-            # Deviation data download
+            # Deviation data table and download
             if deviation_df is not None and len(deviation_df) > 0:
                 st.markdown("---")
                 st.subheader("📉 Deviation Data")
+                
+                # Format deviation dataframe for display
+                dev_display_df = deviation_df.copy()
+                dev_display_df['date'] = pd.to_datetime(dev_display_df['date']).dt.strftime('%Y-%m-%d')
+                dev_display_df['actual_price'] = dev_display_df['actual_price'].apply(lambda x: f"{float(x):.2f}")
+                dev_display_df['projected_price'] = dev_display_df['projected_price'].apply(lambda x: f"{float(x):.2f}")
+                dev_display_df['deviation_pct'] = dev_display_df['deviation_pct'].apply(lambda x: f"{float(x):.2f}%")
+                dev_display_df['deviation_abs'] = dev_display_df['deviation_abs'].apply(lambda x: f"{float(x):.2f}")
+                
+                st.dataframe(dev_display_df, use_container_width=True, height=400)
                 
                 dev_csv = deviation_df.to_csv(index=False)
                 st.download_button(
@@ -435,6 +500,9 @@ if run_analysis:
                     file_name=f"{selected_ticker}_deviation.csv",
                     mime="text/csv"
                 )
+            else:
+                st.markdown("---")
+                st.info("📉 No deviation data available for the selected date range.")
         
         with tab4:
             st.subheader("ℹ️ How This Analysis Works")
