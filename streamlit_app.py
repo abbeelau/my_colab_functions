@@ -86,13 +86,13 @@ expected_return_pct = st.sidebar.slider(
     max_value=500,
     value=100,
     step=10,
-    help="Expected percentage return over the projection period. 100% = doubling"
+    help="Expected total return over the projection period (excluding dividend yield). 100% = doubling"
 )
 
 use_adjusted = st.sidebar.checkbox(
     "Use Adjusted Prices",
-    value=True,
-    help="Adjusted prices account for splits and dividends (recommended)"
+    value=False,
+    help="Adjusted prices account for splits and dividends (recommended for long-term analysis)"
 )
 
 st.sidebar.markdown("---")
@@ -188,16 +188,20 @@ if run_analysis:
         
         # Key metrics - First row
         st.markdown("### 📊 Current Metrics")
-        col1, col2, col3, col4, col5, col6 = st.columns(6)
+        col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
         
         current_price = float(monthly_data.iloc[-1])
         latest_projection = float(projections.iloc[-1]['projected_level'])
         proj_date = projections.iloc[-1]['projected_date']
         potential_gain = ((latest_projection - current_price) / current_price) * 100
         
-        # Calculate annualized return
+        # Calculate annualized return from projection
         years_to_projection = (proj_date - monthly_data.index[-1]).days / 365.25
         annualized_return = ((latest_projection / current_price) ** (1 / years_to_projection) - 1) * 100
+        
+        # Calculate equivalent annualized return from expected return assumption
+        # This shows what annual return is implied by the expected return percentage
+        equivalent_annual_return = ((1 + expected_return_pct / 100) ** (1 / projection_years) - 1) * 100
         
         # Calculate current deviation (current price vs what was projected for now)
         current_date = monthly_data.index[-1]
@@ -226,9 +230,15 @@ if run_analysis:
         
         with col5:
             st.metric("Annualized Return", f"{annualized_return:,.1f}%/yr",
-                     delta=f"{annualized_return:,.1f}%" if annualized_return > 0 else None)
+                     delta=f"{annualized_return:,.1f}%" if annualized_return > 0 else None,
+                     help="Based on current price to latest projection")
         
         with col6:
+            st.metric("Expected Annual Return", f"{equivalent_annual_return:,.1f}%/yr",
+                     delta=f"{equivalent_annual_return:,.1f}%",
+                     help=f"Annualized return implied by {expected_return_pct}% over {projection_years} years (excluding dividends)")
+        
+        with col7:
             if current_deviation is not None:
                 delta_value = f"{current_deviation:+.1f}%"
                 st.metric("Current Deviation", f"{current_deviation:+.1f}%",
