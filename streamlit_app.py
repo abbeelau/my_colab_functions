@@ -187,7 +187,7 @@ if run_analysis:
         st.success(f"✅ Analysis complete for **{selected_ticker}**!")
         
         # Key metrics
-        col1, col2, col3, col4, col5 = st.columns(5)
+        col1, col2, col3, col4, col5, col6 = st.columns(6)
         
         current_price = float(monthly_data.iloc[-1])
         latest_projection = float(projections.iloc[-1]['projected_level'])
@@ -197,6 +197,18 @@ if run_analysis:
         # Calculate annualized return
         years_to_projection = (proj_date - monthly_data.index[-1]).days / 365.25
         annualized_return = ((latest_projection / current_price) ** (1 / years_to_projection) - 1) * 100
+        
+        # Calculate current deviation (current price vs what was projected for now)
+        current_date = monthly_data.index[-1]
+        current_projections_for_now = projections[projections['projected_date'] <= current_date]
+        
+        if len(current_projections_for_now) > 0:
+            # Use the most recent projection that targeted around current date
+            closest_proj = current_projections_for_now.iloc[-1]
+            expected_price = float(closest_proj['projected_level'])
+            current_deviation = ((current_price - expected_price) / expected_price) * 100
+        else:
+            current_deviation = None
         
         with col1:
             st.metric("Current Price", f"${current_price:,.2f}")
@@ -214,6 +226,17 @@ if run_analysis:
         with col5:
             st.metric("Annualized Return", f"{annualized_return:,.1f}%/yr",
                      delta=f"{annualized_return:,.1f}%" if annualized_return > 0 else None)
+        
+        with col6:
+            if current_deviation is not None:
+                delta_value = f"{current_deviation:+.1f}%"
+                st.metric("Current Deviation", f"{current_deviation:+.1f}%",
+                         delta=delta_value,
+                         delta_color="normal" if current_deviation > 0 else "inverse",
+                         help="Current price vs what was projected. Positive = above projection (potentially overvalued)")
+            else:
+                st.metric("Current Deviation", "N/A",
+                         help="Not enough historical projections to calculate")
         
         st.markdown("---")
         
