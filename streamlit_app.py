@@ -33,9 +33,9 @@ ticker_categories = {
     "Other Stocks": ["NFLX", "AMD", "INTC", "JPM", "BAC", "V", "MA", "DIS", "WMT", "PG"]
 }
 
-# Update the ticker mapping in the categories to use
+# Update the ticker mapping
 ticker_mapping = {
-    "NASDAQ-100": "^NDX",  # NASDAQ-100 instead of NASDAQ Composite
+    "NASDAQ-100": "^NDX",
 }
 
 # Category selection
@@ -80,6 +80,7 @@ projection_years = st.sidebar.slider(
     help="How many years into the future to project"
 )
 
+# CHANGED: Updated help text to mention excluding dividend yield
 expected_return_pct = st.sidebar.slider(
     "Expected Return (%)",
     min_value=-50,
@@ -89,6 +90,7 @@ expected_return_pct = st.sidebar.slider(
     help="Expected total return over the projection period (excluding dividend yield). 100% = doubling"
 )
 
+# CHANGED: Default value now False instead of True
 use_adjusted = st.sidebar.checkbox(
     "Use Adjusted Prices",
     value=False,
@@ -160,7 +162,6 @@ if run_analysis:
                 st.stop()
         
         # Calculate deviation (actual vs projected)
-        # For each historical date, find if there's a corresponding projection
         deviation_data = []
         for date in monthly_data.index:
             actual_price = float(monthly_data.loc[date])
@@ -186,6 +187,7 @@ if run_analysis:
         # Display success message
         st.success(f"✅ Analysis complete for **{selected_ticker}**!")
         
+        # CHANGED: Now 7 columns instead of 6, added Expected Annual Return
         # Key metrics - First row
         st.markdown("### 📊 Current Metrics")
         col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
@@ -199,16 +201,15 @@ if run_analysis:
         years_to_projection = (proj_date - monthly_data.index[-1]).days / 365.25
         annualized_return = ((latest_projection / current_price) ** (1 / years_to_projection) - 1) * 100
         
-        # Calculate equivalent annualized return from expected return assumption
+        # CHANGED: Calculate equivalent annualized return from expected return assumption
         # This shows what annual return is implied by the expected return percentage
         equivalent_annual_return = ((1 + expected_return_pct / 100) ** (1 / projection_years) - 1) * 100
         
-        # Calculate current deviation (current price vs what was projected for now)
+        # Calculate current deviation
         current_date = monthly_data.index[-1]
         current_projections_for_now = projections[projections['projected_date'] <= current_date]
         
         if len(current_projections_for_now) > 0:
-            # Use the most recent projection that targeted around current date
             closest_proj = current_projections_for_now.iloc[-1]
             expected_price = float(closest_proj['projected_level'])
             current_deviation = ((current_price - expected_price) / expected_price) * 100
@@ -233,6 +234,7 @@ if run_analysis:
                      delta=f"{annualized_return:,.1f}%" if annualized_return > 0 else None,
                      help="Based on current price to latest projection")
         
+        # CHANGED: NEW METRIC - Expected Annual Return
         with col6:
             st.metric("Expected Annual Return", f"{equivalent_annual_return:,.1f}%/yr",
                      delta=f"{equivalent_annual_return:,.1f}%",
@@ -384,7 +386,6 @@ if run_analysis:
                         st.metric("Max Under-performance", f"{dev_display['deviation_pct'].min():.2f}%")
                     
                     with col5:
-                        # Count periods above/below projection
                         above_count = (dev_display['deviation_pct'] > 0).sum()
                         total_count = len(dev_display)
                         above_pct = (above_count / total_count) * 100 if total_count > 0 else 0
@@ -473,7 +474,7 @@ if run_analysis:
             display_df['window_end'] = display_df['window_end'].dt.strftime('%Y-%m-%d')
             display_df['projected_date'] = display_df['projected_date'].dt.strftime('%Y-%m-%d')
             
-            # Format numeric columns as strings (avoid rounding issues)
+            # Format numeric columns as strings
             display_df['starting_average'] = display_df['starting_average'].apply(lambda x: f"{float(x):.2f}")
             display_df['projected_level'] = display_df['projected_level'].apply(lambda x: f"{float(x):.2f}")
             
@@ -523,7 +524,6 @@ if run_analysis:
             **1. Centered Moving Average:**
             - For each reference date, we calculate a {lookback_months}-month centered average
             - This means {lookback_months//2} months **before** and {lookback_months//2} months **after** the reference date
-            - Example: Reference date 2022-12-31 → Average from {2022-lookback_months//12}-12-31 to {2022+lookback_months//12}-12-31
             
             **2. Projection Calculation:**
             - Starting Point = Centered Average
@@ -531,40 +531,24 @@ if run_analysis:
             - Projected Level = Starting Point × {1 + expected_return_pct/100:.2f}
             - Projected Date = Reference Date + {projection_years} years
             
-            **3. Deviation Analysis:**
+            **3. Expected Annual Return:**
+            - Shows the annualized return implied by your expected return assumption
+            - Formula: (1 + Total Return%)^(1/Years) - 1
+            - Example: {expected_return_pct}% over {projection_years} years = {equivalent_annual_return:.1f}% per year
+            - **Note**: This excludes dividend yield
+            
+            **4. Deviation Analysis:**
             - Compares actual historical prices with what was projected from earlier reference dates
             - Shows whether market outperformed or underperformed expectations
             - Helps identify potential over/undervaluation periods
-            
-            **4. Annualized Return:**
-            - Formula: (Projected Price / Current Price)^(1/Years) - 1
-            - Shows compound annual growth rate needed to reach projection
-            
-            ### 📊 Chart Interpretation
-            
-            **Projection Charts:**
-            - **Blue Line**: Historical monthly average prices (actual data)
-            - **Red Dashed Line**: Projected prices based on your {expected_return_pct}% return assumption
-            - **Green Line**: The centered moving average used as the baseline
-            
-            **Deviation Charts:**
-            - **Positive (Green)**: Market performing better than projected
-            - **Negative (Red)**: Market performing worse than projected
-            - **Statistical bands**: Show normal variation range
             
             ### ⚠️ Important Notes
             
             - **This is NOT a prediction**: It's a scenario analysis based on your assumptions
             - **Past performance ≠ future results**: Markets are unpredictable
+            - **Excludes dividends**: Expected return and projections don't include dividend yield
             - **Centered average limitation**: We need future data, so projections don't reach today's date
             - **Educational purpose only**: Not financial advice - always consult professionals
-            
-            ### 💡 Use Cases
-            
-            - **Scenario Planning**: "What if the market grows by X% over Y years?"
-            - **Valuation Check**: See if current prices deviate significantly from historical patterns
-            - **Comparison**: Analyze different assets with the same assumptions
-            - **Risk Assessment**: Understand historical deviation patterns
             """)
     
     except Exception as e:
@@ -583,43 +567,23 @@ else:
     3. **Set Parameters**:
        - **Lookback Months**: How many months to average (centered around reference date)
        - **Projection Years**: How far into the future to project
-       - **Expected Return**: Your assumption for total return over the projection period
+       - **Expected Return**: Your assumption for total return over the projection period (excluding dividends)
     4. **Adjust Dates** - Set data fetching and chart display ranges
     5. **Click Run Analysis** - Get your charts and projections!
     
-    ### 📈 New Features
+    ### 📈 Key Features
     
     **Enhanced Metrics:**
-    - Current Price
-    - Latest Projection
-    - Total Return (%)
-    - **Annualized Return (%/yr)** - Shows compound annual growth rate
+    - Current Price & Latest Projection
+    - Total Return & Annualized Return
+    - **Expected Annual Return** - Shows what yearly rate your assumption implies
+    - Current Deviation - Compare actual vs projected
+    - 12-Month & 24-Month projections
     
     **Deviation Analysis:**
     - See how actual prices deviated from projections over time
     - Statistical analysis with mean, standard deviation, min/max
     - Visual charts showing over/under performance
-    - Distribution histogram
-    
-    ### 📊 Example Scenarios
-    
-    **Conservative S&P 500:**
-    - Ticker: SPX
-    - Lookback: 48 months
-    - Projection: 7 years
-    - Expected Return: 70% (≈8% annually)
-    
-    **Aggressive Tech Stock:**
-    - Ticker: NVDA
-    - Lookback: 36 months
-    - Projection: 5 years
-    - Expected Return: 150%
-    
-    **Long-term Bitcoin:**
-    - Ticker: BITCOIN
-    - Lookback: 24 months
-    - Projection: 10 years
-    - Expected Return: 500%
     """)
 
 # Footer
